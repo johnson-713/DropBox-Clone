@@ -9,9 +9,15 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import { useAppStore } from "../../store/store"
+import { useUser } from "@clerk/nextjs"
+import { deleteObject, getDownloadURL, ref } from "firebase/storage"
+import { db, storage } from "../../firebase"
+import { deleteDoc, doc } from "firebase/firestore"
+import { getMetadata } from "firebase/storage";
 
 
 export function DeleteModal() {
+    const { user } = useUser()
     const [ 
         setFileId,
         setIsDeleteModalOpen,
@@ -24,7 +30,38 @@ export function DeleteModal() {
         state.fileId,
     ])
 
-    async function deleteFile() {}
+
+    async function deleteFile() {
+      if (!user || !fileId) return;
+      const fileRef = ref(storage, `users/${user.id}/files/${fileId}`)
+
+      // await deleteObject(fileRef).then(() => {
+      //   deleteDoc(doc(db, "users", user.id, "files", fileId)).then(() => {
+      //     console.log("Deleted")
+      //   })
+      // })
+
+
+      try {
+        // Check if the file exists by attempting to get metadata
+        await getMetadata(fileRef);
+    
+        // File exists, proceed with deletion
+        await deleteObject(fileRef);
+        await deleteDoc(doc(db, "users", user.id, "files", fileId));
+        console.log("Deleted");
+      } catch (error) {
+        console.error("Error deleting file:", error);
+        // Check if the error is specifically a "not found" error
+        if (error.code === 'storage/object-not-found') {
+          console.log("File does not exist");
+        } else {
+          console.log("Unexpected error:", error);
+        }
+      } finally {
+        setIsDeleteModalOpen(false);
+      }
+    }
   return (
     <Dialog
         open={isDeleteModalOpen}
