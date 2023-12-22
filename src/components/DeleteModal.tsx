@@ -35,32 +35,22 @@ export function DeleteModal() {
       if (!user || !fileId) return;
       const fileRef = ref(storage, `users/${user.id}/files/${fileId}`)
 
+      console.log(fileRef)
+
       // await deleteObject(fileRef).then(() => {
       //   deleteDoc(doc(db, "users", user.id, "files", fileId)).then(() => {
       //     console.log("Deleted")
       //   })
       // })
-
-
-      try {
-        // Check if the file exists by attempting to get metadata
-        await getMetadata(fileRef);
-    
-        // File exists, proceed with deletion
-        await deleteObject(fileRef);
-        await deleteDoc(doc(db, "users", user.id, "files", fileId));
-        console.log("Deleted");
-      } catch (error) {
-        console.error("Error deleting file:", error);
-        // Check if the error is specifically a "not found" error
-        if (error.code === 'storage/object-not-found') {
-          console.log("File does not exist");
-        } else {
-          console.log("Unexpected error:", error);
+      deleteObject(fileRef).then(() => {
+        console.log("Deleted!")
+      }).catch (
+        (error) => {
+          console.error("File unable to delete")
         }
-      } finally {
-        setIsDeleteModalOpen(false);
-      }
+      )
+
+      
     }
   return (
     <Dialog

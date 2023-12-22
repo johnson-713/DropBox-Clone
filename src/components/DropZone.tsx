@@ -76,7 +76,7 @@ function DropZoneComponent() {
         <input {...getInputProps()} />
         {!isDragActive && "Click here or drop a file to upload!"}
         {isDragActive && !isDragReject && "Drop to upload this file!"}
-        {isDragReject && "File type not acceptred, sorry!"}
+        {isDragReject && "File type not accepted, sorry!"}
         {
             isFileTooLarge && (
                 <div className="text-danger mt-2">File is too large.</div>
