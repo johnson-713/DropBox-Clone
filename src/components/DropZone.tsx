@@ -7,6 +7,10 @@ import React, { useState } from 'react'
 import Dropzone from 'react-dropzone'
 import { db, storage } from '../../firebase';
 import { getDownloadURL, ref, uploadBytes } from 'firebase/storage';
+import html2canvas from 'html2canvas';
+import jsPDF from 'jspdf';
+import { error } from 'console';
+import { FileType } from '../../typings';
 
 
 function DropZoneComponent() {
@@ -45,13 +49,72 @@ function DropZoneComponent() {
 
         const imageRef = ref(storage, `users${user.id}/files/${docRef.id}`)
 
-        uploadBytes(imageRef, selectedFile).then(async (snapshot) => {
+        uploadBytes(imageRef, selectedFile).then(async () => {
           const downloadURL = await getDownloadURL(imageRef)
 
           await updateDoc(doc(db, "users", user.id, "files", docRef.id), {
             downloadURL: downloadURL,
           })
         })
+
+        async function convertHtmlToPdf(htmlFile: File, user: { id: string }, docRef: { id: string }): Promise<void> {
+          return new Promise(async (resolve, reject) => {
+            const reader = new FileReader();
+        
+            reader.onload = async (event) => {
+              const htmlContent = event.target?.result as string;
+        
+              const pdf = new jsPDF();
+        
+              // Use html2canvas to capture the HTML content
+              const canvas = await html2canvas(document.body);
+        
+              // Convert the canvas to an image data URL
+              const imgData = canvas.toDataURL('image/png');
+        
+              // Add the image data to the PDF
+              pdf.addImage(imgData, 'PNG', 10, 10, 190, 0);
+
+              const pdfBlob = pdf.output('blob');
+        
+              // Upload the PDF to Firebase Storage
+              const pdfStorageRef = ref(storage, `users/${user.id}/files/${docRef.id}.pdf`);
+              await uploadBytes(pdfStorageRef, pdfBlob);
+        
+              // Get the download URL of the uploaded PDF
+              const pdfDownloadURL = await getDownloadURL(pdfStorageRef);
+        
+              // Update Firestore document with the PDF download URL
+              await updateDoc(doc(db, "users", user.id, "files", docRef.id), {
+                downloadURL: pdfDownloadURL,
+              })
+        
+              // Resolve the promise
+              resolve();
+            };
+        
+            // Read the HTML file content
+            reader.readAsText(htmlFile);
+          });
+        }
+
+        // const fileType = selectedFile.type;
+
+        // if(fileType === 'text/html') {
+        //   uploadBytes(imageRef, selectedFile).then(async (snapshot) => {
+        //     const pdfBlob = await convertHtmlToPdf(selectedFile)
+
+        //     const pdfRef = ref(storage, `users/${user.id}/files/${docRef.id}.pdf`)
+        //     await uploadBytes(pdfRef, pdfBlob)
+
+        //     const pdfDownloadURL = await getDownloadURL(pdfRef)
+
+        //     await updateDoc(doc(db, "users", user.id, "files", docRef.id), {
+        //       downloadURL: pdfDownloadURL,
+        //     })
+
+        //   })
+        // }
     }
 
     const maxSize = 20971520;
