@@ -6,7 +6,7 @@ import { ThemeToggler } from "./ThemeToggler";
 
 function Header() {
   return (
-    <header className="flex items-center justify-between">
+    <header className="flex items-center justify-between px-[34px] py-[10px]">
         <Link href="/" className="flex items-center space-x-2">
             <div className="w-fit bg-[#1060FE]">
                 <Image
